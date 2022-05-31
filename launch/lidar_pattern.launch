@@ -4,50 +4,60 @@
   <arg name="cloud_topic" default="velodyne_points" />
   <arg name="sensor_id" default="0" />
 
+  <arg name="x_min" default="0"/>
+  <arg name="x_max" default="100"/>
+  <arg name="y_min" default="-100"/>
+  <arg name="y_max" default="100"/>
+  <arg name="z_min" default="-2"/>
+  <arg name="z_max" default="1"/>
+
+  <arg name="circle_radius" default="0.12"/>
+  <arg name="delta_width_circles" default="0.5"/>
+  <arg name="delta_height_circles" default="0.4"/>
+  <arg name="passthrough_radius_min" default="1"/>
+  <arg name="passthrough_radius_max" default="6"/>
+  <arg name="target_radius_tolerance" default="0.01"/>
+
   <node pkg="nodelet" type="nodelet" name="pcl_manager_$(arg sensor_id)" args="manager" output="$(arg stdout)"/>
 
   <node pkg="nodelet" type="nodelet" name="pass_through_z_velo_$(arg sensor_id)" args="load pcl/PassThrough pcl_manager_$(arg sensor_id)" output="$(arg stdout)">
     <remap from="~input" to="$(arg cloud_topic)" />
     <remap from="~output" to="/lidar_pattern_$(arg sensor_id)/z_filtered" />
-    <rosparam>
-      filter_field_name: z
-      filter_limit_min: -2
-      filter_limit_max: 1
-      filter_limit_negative: False
-      max_queue_size: 1
-    </rosparam>
+    <param name="filter_field_name" value="z"/>
+    <param name="filter_limit_min" value="$(arg z_min)"/>
+    <param name="filter_limit_max" value="$(arg z_max)"/>
+    <param name="filter_limit_negative" value="False"/>
+    <param name="max_queue_size" value="1"/>
   </node>
 
   <node pkg="nodelet" type="nodelet" name="pass_through_y_velo_$(arg sensor_id)" args="load pcl/PassThrough pcl_manager_$(arg sensor_id)" output="$(arg stdout)">
     <remap from="~input" to="/lidar_pattern_$(arg sensor_id)/z_filtered" />
     <remap from="~output" to="/lidar_pattern_$(arg sensor_id)/zy_filtered" />
-    <rosparam>
-      filter_field_name: y
-      filter_limit_min: -100
-      filter_limit_max: 100
-      filter_limit_negative: False
-      max_queue_size: 1
-    </rosparam>
+    <param name="filter_field_name" value="y"/>
+    <param name="filter_limit_min" value="$(arg y_min)"/>
+    <param name="filter_limit_max" value="$(arg y_max)"/>
+    <param name="filter_limit_negative" value="False"/>
+    <param name="max_queue_size" value="1"/>
   </node>
 
   <node pkg="nodelet" type="nodelet" name="pass_through_x_velo_$(arg sensor_id)" args="load pcl/PassThrough pcl_manager_$(arg sensor_id)" output="$(arg stdout)">
     <remap from="~input" to="/lidar_pattern_$(arg sensor_id)/zy_filtered" />
     <remap from="~output" to="/lidar_pattern_$(arg sensor_id)/zyx_filtered" />
-    <rosparam>
-      filter_field_name: x
-      filter_limit_min: 0
-      filter_limit_max: 100
-      filter_limit_negative: False
-      max_queue_size: 1
-    </rosparam>
+    <param name="filter_field_name" value="x"/>
+    <param name="filter_limit_min" value="$(arg x_min)"/>
+    <param name="filter_limit_max" value="$(arg x_max)"/>
+    <param name="filter_limit_negative" value="False"/>
+    <param name="max_queue_size" value="1"/>
   </node>
 
   <node pkg="velo2cam_calibration" type="lidar_pattern" name="lidar_pattern_$(arg sensor_id)" output="screen">
     <remap from="~cloud1" to="/lidar_pattern_$(arg sensor_id)/zyx_filtered"/>
-    <rosparam>
-      passthrough_radius_min: 1.0
-      passthrough_radius_max: 6.0
-    </rosparam>
+    <param name="circle_radius" value="$(arg circle_radius)"/>
+    <param name="delta_width_circles" value="$(arg delta_width_circles)"/>
+    <param name="delta_height_circles" value="$(arg delta_height_circles)"/>
+    <param name="passthrough_radius_min" value="$(arg passthrough_radius_min)"/>
+    <param name="passthrough_radius_max" value="$(arg passthrough_radius_max)"/>
+    <param name="target_radius_tolerance" value="$(arg target_radius_tolerance)"/>
   </node>
 
 </launch>

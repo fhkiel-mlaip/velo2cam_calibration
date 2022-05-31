@@ -577,8 +577,8 @@ int main(int argc, char **argv) {
 
   string csv_name;
 
-  nh.param("delta_width_circles", delta_width_circles_, 0.5);
-  nh.param("delta_height_circles", delta_height_circles_, 0.4);
+  nh_.param("delta_width_circles", delta_width_circles_, 0.5);
+  nh_.param("delta_height_circles", delta_height_circles_, 0.4);
   nh_.param("plane_threshold", plane_threshold_, 0.1);
   nh_.param("gradient_threshold", gradient_threshold_, 0.1);
   nh_.param("plane_distance_inliers", plane_distance_inliers_, 0.1);

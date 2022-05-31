@@ -537,11 +537,11 @@ int main(int argc, char **argv) {
 
   string csv_name;
 
-  nh.param("delta_width_circles", delta_width_circles_, 0.5);
-  nh.param("delta_height_circles", delta_height_circles_, 0.4);
+  nh_.param("delta_width_circles", delta_width_circles_, 0.5);
+  nh_.param("delta_height_circles", delta_height_circles_, 0.4);
   nh_.param("marker_size", marker_size_, 0.20);
-  nh_.param("delta_width_qr_center_", delta_width_qr_center_, 0.55);
-  nh_.param("delta_height_qr_center_", delta_height_qr_center_, 0.35);
+  nh_.param("delta_width_qr_center", delta_width_qr_center_, 0.55);
+  nh_.param("delta_height_qr_center", delta_height_qr_center_, 0.35);
   nh_.param("min_detected_markers", min_detected_markers_, 3);
   nh_.param("cluster_tolerance", cluster_tolerance_, 0.05);
   nh_.param("min_cluster_factor", min_cluster_factor_, 2.0 / 3.0);
