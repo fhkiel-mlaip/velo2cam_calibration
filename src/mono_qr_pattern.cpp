@@ -207,6 +207,8 @@ std:
   // set tp use corner refinement for accuracy, values obtained
   // for pixel coordinates are more accurate than the neaterst pixel
 
+  parameters->minMarkerDistanceRate = 0.01;
+
 #if (CV_MAJOR_VERSION == 3 && CV_MINOR_VERSION <= 2) || CV_MAJOR_VERSION < 3
   parameters->doCornerRefinement = true;
 #else
