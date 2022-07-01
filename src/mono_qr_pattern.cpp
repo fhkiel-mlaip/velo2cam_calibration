@@ -167,8 +167,7 @@ void imageCallback(const sensor_msgs::ImageConstPtr &msg,
   // Marker 3 -> aRuCo ID: 3
 
   std::vector<std::vector<cv::Point3f>> boardCorners;
-std:
-  vector<cv::Point3f> boardCircleCenters;
+  std::vector<cv::Point3f> boardCircleCenters;
   float width = delta_width_qr_center_;
   float height = delta_height_qr_center_;
   float circle_width = delta_width_circles_ / 2.;

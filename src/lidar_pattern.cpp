@@ -41,12 +41,23 @@
 #include <velo2cam_calibration/LidarConfig.h>
 #include <velo2cam_utils.h>
 
+#if DEBUG
+#include <random>
+#endif
+
 using namespace std;
 using namespace sensor_msgs;
 
 ros::Publisher cumulative_pub, centers_pub, pattern_pub, range_pub, coeff_pub,
-    rotated_pattern_pub;
+    rotated_pattern_pub, all_possible_centers_borders_pub, all_possible_centers_pub,
+    centers_cloud_pub, velo_complete_with_edge_intensity_pub;
 pcl::PointCloud<pcl::PointXYZ>::Ptr cumulative_cloud;
+
+#if DEBUG
+std::random_device dev;
+std::mt19937 rng(dev());
+std::uniform_int_distribution<std::mt19937::result_type> dist(0, 255);
+#endif
 
 // Dynamic parameters
 double threshold_;
@@ -84,6 +95,13 @@ void callback(const PointCloud2::ConstPtr &laser_cloud) {
 
   // This cloud is already xyz-filtered
   fromROSMsg(*laser_cloud, *velocloud);
+
+  if (DEBUG) {
+    sensor_msgs::PointCloud2 velocloud_ros;
+    pcl::toROSMsg(*velocloud, velocloud_ros);
+    velocloud_ros.header = laser_cloud->header;
+    velo_complete_with_edge_intensity_pub.publish(velocloud_ros);
+  }
 
   Velodyne::addRange(*velocloud);
 
@@ -260,9 +278,25 @@ void callback(const PointCloud2::ConstPtr &laser_cloud) {
   if (DEBUG)
     ROS_INFO("[LiDAR] Searching for points in cloud of size %lu",
              xy_cloud->points.size());
+#if DEBUG
+  pcl::PointCloud<Velodyne::Point>::Ptr all_possible_centers_cloud(new pcl::PointCloud<Velodyne::Point>);
+#endif
   while (xy_cloud->points.size() > 3) {
     circle_segmentation.setInputCloud(xy_cloud);
     circle_segmentation.segment(*inliers3, *coefficients3);
+
+#if DEBUG
+    {
+      pcl::PointCloud<Velodyne::Point>::Ptr temp(new pcl::PointCloud<Velodyne::Point>);
+      pcl::copyPointCloud<pcl::PointXYZ>(*xy_cloud, *inliers3, *temp);
+      float randomIntensity = dist(rng);
+      for (size_t i = 0; i < temp->points.size(); ++i) {
+        temp->points[i].intensity = randomIntensity;
+      }
+      *all_possible_centers_cloud += *temp;
+    }
+#endif
+
     if (inliers3->indices.size() == 0) {
       if (DEBUG)
         ROS_INFO(
@@ -276,6 +310,9 @@ void callback(const PointCloud2::ConstPtr &laser_cloud) {
       // Reset for next iteration
       circle_segmentation.setOptimizeCoefficients(true);
       if (inliers3->indices.size() == 0) {
+        if (DEBUG) {
+          ROS_INFO("[LiDAR] No further circles found");
+        }
         break;
       }
     }
@@ -300,8 +337,23 @@ void callback(const PointCloud2::ConstPtr &laser_cloud) {
                xy_cloud->points.size());
   }
 
+#if DEBUG
+  {
+    sensor_msgs::PointCloud2 ros_pointcloud;
+    pcl::toROSMsg(*all_possible_centers_cloud, ros_pointcloud);
+    ros_pointcloud.header = laser_cloud->header;
+    all_possible_centers_borders_pub.publish(ros_pointcloud);
+  }
+  {
+    sensor_msgs::PointCloud2 ros_pointcloud;
+    pcl::toROSMsg(*centroid_candidates, ros_pointcloud);
+    ros_pointcloud.header = laser_cloud->header;
+    all_possible_centers_pub.publish(ros_pointcloud);
+  }
+#endif
+
   if (centroid_candidates->size() < TARGET_NUM_CIRCLES) {
-    // Exit 3: all centers not found
+    // Exit 3: not all centers found
     ROS_WARN("[LiDAR] Not enough centers: %ld", centroid_candidates->size());
     return;
   }
@@ -433,6 +485,10 @@ void callback(const PointCloud2::ConstPtr &laser_cloud) {
     pcl::toROSMsg(*centers_cloud, ros2_pointcloud);
     ros2_pointcloud.header = laser_cloud->header;
 
+#if DEBUG
+    centers_cloud_pub.publish(ros2_pointcloud);
+#endif
+
     velo2cam_calibration::ClusterCentroids to_send;
     to_send.header = laser_cloud->header;
     to_send.cluster_iterations = clouds_used_;
@@ -509,7 +565,11 @@ int main(int argc, char **argv) {
   if (DEBUG) {
     pattern_pub = nh_.advertise<PointCloud2>("pattern_circles", 1);
     rotated_pattern_pub = nh_.advertise<PointCloud2>("rotated_pattern", 1);
+    all_possible_centers_borders_pub = nh_.advertise<PointCloud2>("all_possible_centers_borders", 1);
+    all_possible_centers_pub = nh_.advertise<PointCloud2>("all_possible_centers", 1);
+    centers_cloud_pub = nh_.advertise<PointCloud2>("centers_pts_cloud", 1);
     cumulative_pub = nh_.advertise<PointCloud2>("cumulative_cloud", 1);
+    velo_complete_with_edge_intensity_pub = nh_.advertise<PointCloud2>("velo_complete_with_edge_intensity", 1);
   }
   centers_pub =
       nh_.advertise<velo2cam_calibration::ClusterCentroids>("centers_cloud", 1);
